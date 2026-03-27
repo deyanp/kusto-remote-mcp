@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="11.0.100" />
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Azure.Kusto.Data" Version="14.0.3" />
+    <PackageReference Include="ModelContextProtocol" Version="1.1.0" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Framework/Configuration.fs" />
+    <Compile Include="Framework/Http.fs" />
+    <Compile Include="Framework/Logging.fs" />
+    <Compile Include="Framework/AzureKeyVault.fs" />
+    <Compile Include="Framework/Mcp.Hosting.fs" />
+    <Compile Include="Framework/AzureEntraIdOAuth.BearerTokenMiddleware.fs" />
+    <Compile Include="Framework/Hosting.HostBuilder.fs" />
+    <Compile Include="Framework/AzureDataExplorer.QueryValidation.fs" />
+    <Compile Include="Api.Functions.OAuth.fs" />
+    <Compile Include="Api.Functions.McpTools.fs" />
+    <Compile Include="EnvVars.fs" />
+    <Compile Include="DependencyInjection.fs" />
+    <Compile Include="Api.Wiring.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,10 @@
+.DS_Store
+.claude/
+.idea/
+
+bin/
+obj/
+
+.fake
+
+**/Properties/launchSettings.json
