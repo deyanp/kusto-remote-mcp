@@ -2,6 +2,8 @@
 
 A remote MCP (Model Context Protocol) server that lets Claude query Azure Data Explorer (Kusto) under the authenticated user's own identity. The server acts as an OAuth proxy between Claude and Azure Entra ID, so each user's ADX permissions, row-level security, and audit trail are preserved — no shared service principal is involved.
 
+For more info read the post at dev.to [Claude and Kusto or MCP and CQRS+](https://dev.to/deyanp/claude-and-kusto-or-mcp-and-cqrs-4n2j).
+
 ## How it works
 
 ```
