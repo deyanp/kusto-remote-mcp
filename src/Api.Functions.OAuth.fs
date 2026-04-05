@@ -1,5 +1,5 @@
 /// OAuth proxy endpoints (RFC 7591, 8414, 9728) that delegate authentication to Azure Entra ID.
-module Api.Functions.OAuth
+module KustoRemoteMcp.Api.Functions.OAuth
 
 open System
 open System.Collections.Generic

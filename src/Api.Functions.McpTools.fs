@@ -1,5 +1,5 @@
 /// MCP tool implementations: KQL query execution against ADX with per-user token passthrough.
-module MCP.Api.Functions.McpTools
+module KustoRemoteMcp.Api.Functions.McpTools
 
 open System
 open System.Data

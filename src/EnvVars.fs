@@ -1,25 +1,44 @@
 /// Application configuration loaded from environment variables (tenant, OAuth, ADX, URLs).
-module EnvVars
+module KustoRemoteMcp.EnvVars
 
 open Framework.Configuration
 
-let tenantId = Environment.getEnvironmentVariable "AZURE_TENANT_ID"
+type EntraIdConfig =
+    { TenantId: string
+      ClientId: string
+      ClientSecret: string }
 
-module OAuth =
-    let clientId = Environment.getEnvironmentVariable "OAuth_ClientId"
-    let clientSecret = Environment.getEnvironmentVariable "OAuth_ClientSecret"
+module EntraIdConfig =
+    let fromEnv () =
+        { TenantId = Environment.getEnvironmentVariable "AZURE_TENANT_ID"
+          ClientId = Environment.getEnvironmentVariable "OAuth_ClientId"
+          ClientSecret = Environment.getEnvironmentVariable "OAuth_ClientSecret" }
 
-let listenUrl =
-    Environment.tryGetEnvironmentVariable "MCP_LISTEN_URL"
-    |> Option.defaultValue "https://localhost:5001"
+type AdxConfig =
+    { ConnectionString: string
+      Database: string
+      ServiceUrl: string }
 
-let baseUrl =
-    Environment.tryGetEnvironmentVariable "MCP_BASE_URL"
-    |> Option.defaultValue listenUrl
+module AdxConfig =
+    let fromEnv () =
+        let conn = Environment.getEnvironmentVariable "AzureDataExplorer_ConnectionString"
+        let db = Environment.getEnvironmentVariable "AzureDataExplorer_Database"
 
-module ADX =
-    let connectionString =
-        Environment.getEnvironmentVariable "AzureDataExplorer_ConnectionString"
+        { ConnectionString = conn
+          Database = db
+          ServiceUrl = $"%s{conn}/%s{db}" }
 
-    let database = Environment.getEnvironmentVariable "AzureDataExplorer_Database"
-    let serviceUrl = $"%s{connectionString}/%s{database}"
+type ServerConfig = { ListenUrl: string; BaseUrl: string }
+
+module ServerConfig =
+    let fromEnv () =
+        let listenUrl =
+            Environment.tryGetEnvironmentVariable "MCP_LISTEN_URL"
+            |> Option.defaultValue "https://localhost:5001"
+
+        let baseUrl =
+            Environment.tryGetEnvironmentVariable "MCP_BASE_URL"
+            |> Option.defaultValue listenUrl
+
+        { ListenUrl = listenUrl
+          BaseUrl = baseUrl }

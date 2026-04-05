@@ -1,39 +1,47 @@
 /// Application entry point: Key Vault decryption, host builder composition, and startup.
-module Program
+module KustoRemoteMcp.Program
 
 open System.Threading
 open Microsoft.Extensions.Hosting
 open Framework.AzureKeyVault.Environment
 open Framework.Hosting.HostBuilder
-open Api.Wiring
-
-module McpDI = MCP.DependencyInjection
+open EnvVars
 
 // this has to be first, otherwise modules initialize with env vars which have not been decrypted yet!
 Environment.overwriteEnvironmentVariablesFromKVRef () |> Async.RunSynchronously
 
+// Load config groups separately
+let entra = EntraIdConfig.fromEnv ()
+let adx = AdxConfig.fromEnv ()
+let server = ServerConfig.fromEnv ()
+
+// Wire endpoints and middleware
+module OAuthDI = DependencyInjection.OAuth
+
 let webApis =
-    [ WebApi.health
+    [ Api.Wiring.WebApi.health
+      Api.Wiring.WebApi.OAuth.register (OAuthDI.register entra)
+      Api.Wiring.WebApi.OAuth.authorize (OAuthDI.authorize entra adx)
+      Api.Wiring.WebApi.OAuth.token (OAuthDI.token entra adx)
+      Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (OAuthDI.wellKnownOauthProtectedResource adx server)
+      Api.Wiring.WebApi.OAuth.wellKnownAuthServer (OAuthDI.wellKnownAuthServer entra adx server) ]
 
-      WebApi.OAuth.register
-      WebApi.OAuth.authorize
-      WebApi.OAuth.token
-      WebApi.OAuth.wellKnownProtectedResource
-      WebApi.OAuth.wellKnownAuthServer ]
+let mcpTools = Api.Wiring.McpTools.create adx
 
-let mcpTools = [ McpTools.executeKustoQuery ]
+let requireBearerToken =
+    DependencyInjection.Middleware.createBearerTokenAuth entra server
 
 [<EntryPoint>]
 let main argv =
     let builder =
         createDefaultBuilder argv BackgroundServiceExceptionBehavior.StopHost
-        |> McpDI.configureMcpServices mcpTools
-        |> configureWebHost webApis McpDI.OAuth.requireBearerToken (Framework.Mcp.Hosting.mapMcpEndpoints "")
+        |> Framework.Mcp.Hosting.configureMcpServices mcpTools
+        |> configureWebHost webApis requireBearerToken (Framework.Mcp.Hosting.mapMcpEndpoints "")
 
     use tokenSource = new CancellationTokenSource()
     use host = builder.Build()
 
-    printfn "MCP Server running at %s" EnvVars.baseUrl
+    printfn "MCP Server running at %s" server.BaseUrl
 
     host.RunAsync(tokenSource.Token) |> Async.AwaitTask |> Async.RunSynchronously
 

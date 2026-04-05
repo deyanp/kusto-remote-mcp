@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/KustoRemoteMcp.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/KustoRemoteMcp.Tests/KustoRemoteMcp.Tests.fsproj" />
+  </Folder>
+</Solution>

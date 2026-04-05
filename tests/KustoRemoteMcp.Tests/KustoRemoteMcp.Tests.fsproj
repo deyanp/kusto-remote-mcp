@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/KustoRemoteMcp.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Core" Version="11.0.100" />
+    <PackageReference Include="TickSpec" Version="*" />
+    <PackageReference Include="TickSpec.xUnit" Version="*" />
+    <PackageReference Include="xunit" Version="*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="*" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.*" />
+    <PackageReference Include="ModelContextProtocol.Core" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="EnvVars.fs" />
+    
+    <Compile Include="Mocks.fs" />
+    <Compile Include="Assert.fs" />
+    <Compile Include="TestServer.fs" />
+    <Compile Include="HttpClient.fs" />
+    <Compile Include="TickSpecWiring.fs" />
+    <Compile Include="Features/QueryValidationSteps.fs" />
+    <Compile Include="Features/ExecuteKustoQuerySteps.fs" />
+    <Compile Include="Features/OAuthEndpointsSteps.fs" />
+    <Compile Include="Features/BearerTokenMiddlewareSteps.fs" />
+    <Compile Include="Features/HealthSteps.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Features/*.feature" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

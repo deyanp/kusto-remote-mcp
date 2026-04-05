@@ -1,5 +1,5 @@
 /// Web API endpoint definitions and MCP tool definitions that map to the host builder.
-namespace Api.Wiring
+namespace KustoRemoteMcp.Api.Wiring
 
 open System
 open System.Net.Http
@@ -7,8 +7,7 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Framework.Hosting.HostBuilder
 open Framework.Mcp.Hosting
-
-module McpDI = MCP.DependencyInjection
+open KustoRemoteMcp
 
 module WebApi =
     let health =
@@ -24,43 +23,47 @@ module WebApi =
                 :> Task }
 
     module OAuth =
-        let register =
+        let private wrapAsync (handler: HttpContext -> Async<unit>) : HttpContext -> Task =
+            handler >> Async.StartAsTask >> fun t -> t :> Task
+
+        let register (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_register"
               Method = HttpMethod.Post
               Path = "/oauth/register"
-              ExecuteOperation = McpDI.OAuth.register >> fun a -> Async.StartAsTask a :> Task }
+              ExecuteOperation = wrapAsync handler }
 
-        let authorize =
+        let authorize (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_authorize"
               Method = HttpMethod.Get
               Path = "/oauth/authorize"
-              ExecuteOperation = McpDI.OAuth.authorize >> fun a -> Async.StartAsTask a :> Task }
+              ExecuteOperation = wrapAsync handler }
 
-        let token =
+        let token (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_token"
               Method = HttpMethod.Post
               Path = "/oauth/token"
-              ExecuteOperation = McpDI.OAuth.token >> fun a -> Async.StartAsTask a :> Task }
+              ExecuteOperation = wrapAsync handler }
 
-        let wellKnownProtectedResource =
+        let wellKnownProtectedResource (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_resource"
               Method = HttpMethod.Get
               Path = "/.well-known/oauth-protected-resource"
-              ExecuteOperation =
-                McpDI.OAuth.wellKnownOauthProtectedResource
-                >> fun a -> Async.StartAsTask a :> Task }
+              ExecuteOperation = wrapAsync handler }
 
-        let wellKnownAuthServer =
+        let wellKnownAuthServer (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_server"
               Method = HttpMethod.Get
               Path = "/.well-known/oauth-authorization-server"
-              ExecuteOperation = McpDI.OAuth.wellKnownAuthServer >> fun a -> Async.StartAsTask a :> Task }
+              ExecuteOperation = wrapAsync handler }
+
 
 module McpTools =
-    let executeKustoQuery: McpServerToolDef =
-        { Name = "execute_kusto_query"
-          Description =
-            "Executes a KQL query against the configured Azure Data Explorer (Kusto) cluster and database. Returns query results as a JSON array. The query runs under the authenticated user's identity."
-          ReadOnly = true
-          Destructive = false
-          ExecuteOperation = Func<string, Task<string>>(McpDI.McpTools.executeKustoQuery) }
+    let create (adx: EnvVars.AdxConfig) =
+        let executeKustoQuery = DependencyInjection.McpTools.create adx
+
+        [ { Name = "execute_kusto_query"
+            Description =
+                "Executes a KQL query against the configured Azure Data Explorer (Kusto) cluster and database. Returns query results as a JSON array. The query runs under the authenticated user's identity."
+            ReadOnly = true
+            Destructive = false
+            ExecuteOperation = Func<string, Task<string>>(executeKustoQuery) } ]
