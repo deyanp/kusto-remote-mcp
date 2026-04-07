@@ -8,3 +8,10 @@ obj/
 .fake
 
 **/Properties/launchSettings.json
+
+deploy_dev.sh
+deploy/k8s-depl-dev.yml
+deploy/configure_c2d-dev-localdev-client.sh
+tunnel_k3d_start.sh
+tunnel_k3d_stop.sh
+.tunnel_k3d.pid
