@@ -3,6 +3,7 @@ module KustoRemoteMcp.Tests.Mocks
 
 open System
 open System.Data
+open System.Globalization
 open System.Text
 open System.Text.Json
 open System.Threading
@@ -85,7 +86,7 @@ module TableParser =
             | "int" -> box (Int32.Parse(value))
             | "long" -> box (Int64.Parse(value))
             | "bool" -> box (Boolean.Parse(value))
-            | "double" -> box (Double.Parse(value))
+            | "double" -> box (Double.Parse(value, CultureInfo.InvariantCulture))
             | "timespan" -> box (TimeSpan.Parse(value))
             | "datetime" -> box (DateTime.Parse(value))
             | "guid" -> box (Guid.Parse(value))
