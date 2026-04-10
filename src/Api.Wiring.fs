@@ -24,7 +24,7 @@ module WebApi =
 
     module OAuth =
         let private wrapAsync (handler: HttpContext -> Async<unit>) : HttpContext -> Task =
-            handler >> Async.StartAsTask >> fun t -> t :> Task
+            handler >> Async.StartAsTask >> (fun t -> t :> Task)
 
         let register (handler: HttpContext -> Async<unit>) =
             { Name = "oauth_register"
@@ -58,12 +58,12 @@ module WebApi =
 
 
 module McpTools =
-    let create (adx: EnvVars.AdxConfig) =
-        let executeKustoQuery = DependencyInjection.McpTools.create adx
+    let executeKustoQuery (adx: EnvVars.AdxConfig) =
+        let executeKustoQuery = DependencyInjection.McpTools.executeKustoQuery adx
 
-        [ { Name = "execute_kusto_query"
-            Description =
-                "Executes a KQL query against the configured Azure Data Explorer (Kusto) cluster and database. Returns query results as a JSON array. The query runs under the authenticated user's identity."
-            ReadOnly = true
-            Destructive = false
-            ExecuteOperation = Func<string, Task<string>>(executeKustoQuery) } ]
+        { Name = "execute_kusto_query"
+          Description =
+            "Executes a KQL query against the configured Azure Data Explorer (Kusto) cluster and database. Returns query results as a JSON array. The query runs under the authenticated user's identity."
+          ReadOnly = true
+          Destructive = false
+          ExecuteOperation = Func<string, Task<string>>(executeKustoQuery) }

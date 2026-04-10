@@ -30,7 +30,11 @@ let createWithoutMcp (webApis: WebApiDef list) (middleware: IApplicationBuilder 
     host.RunAsync cancellationTokenSource.Token |> Async.AwaitTask |> Async.Start
     host.GetTestClient()
 
-let createWithMcp (webApis: WebApiDef list) (mcpTools: McpServerToolDef list) (middleware: IApplicationBuilder -> unit) =
+let createWithMcp
+    (webApis: WebApiDef list)
+    (mcpTools: McpServerToolDef list)
+    (middleware: IApplicationBuilder -> unit)
+    =
     let hostBuilder =
         createDefaultBuilder Array.empty BackgroundServiceExceptionBehavior.Ignore
         |> configureMcpServices mcpTools

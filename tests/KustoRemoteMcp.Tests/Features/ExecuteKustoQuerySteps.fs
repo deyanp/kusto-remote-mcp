@@ -31,11 +31,7 @@ module Steps =
     let private validTestJwt =
         JwtHelper.createToken
             [ "exp", box 9999999999L
-              "iss",
-              box
-                  (sprintf
-                      "https://login.microsoftonline.com/%s/v2.0"
-                      testEntra.TenantId) ]
+              "iss", box (sprintf "https://login.microsoftonline.com/%s/v2.0" testEntra.TenantId) ]
 
     let private getOrCreateMcpClient (ctx: Context) =
         match ctx.McpClient with
@@ -76,45 +72,50 @@ module Steps =
             let transport = new HttpClientTransport(transportOptions, httpClient)
 
             let mcpClient =
-                McpClient.CreateAsync(transport)
-                |> Async.AwaitTask
-                |> Async.RunSynchronously
+                McpClient.CreateAsync(transport) |> Async.AwaitTask |> Async.RunSynchronously
 
             mcpClient, { ctx with McpClient = Some mcpClient }
 
     [<Given>]
     let ``the Kusto client returns columns and rows`` (table: Table) (ctx: Context) =
         let reader = TableParser.fromTable table.Header table.Rows :> IDataReader
-        { ctx with AdxBehavior = Some(fun () -> reader) }
+
+        { ctx with
+            AdxBehavior = Some(fun () -> reader) }
 
     [<Given>]
     let ``the Kusto client throws a SyntaxException`` (ctx: Context) =
-        { ctx with AdxBehavior = Some(fun () -> raise (SyntaxException("test syntax error", null :> exn))) }
+        { ctx with
+            AdxBehavior = Some(fun () -> raise (SyntaxException("test syntax error", null :> exn))) }
 
     [<Given>]
     let ``the Kusto client throws a SemanticException`` (ctx: Context) =
-        { ctx with AdxBehavior = Some(fun () -> raise (SemanticException("test semantic error", null :> exn))) }
+        { ctx with
+            AdxBehavior = Some(fun () -> raise (SemanticException("test semantic error", null :> exn))) }
 
     [<Given>]
     let ``the Kusto client throws a KustoServiceTimeoutException`` (ctx: Context) =
-        { ctx with AdxBehavior = Some(fun () -> raise (KustoServiceTimeoutException("timeout", null :> exn))) }
+        { ctx with
+            AdxBehavior = Some(fun () -> raise (KustoServiceTimeoutException("timeout", null :> exn))) }
 
     [<Given>]
     let ``the Kusto client throws a KustoRequestThrottledException`` (ctx: Context) =
-        { ctx with AdxBehavior = Some(fun () -> raise (KustoRequestThrottledException("throttled", null :> exn))) }
+        { ctx with
+            AdxBehavior = Some(fun () -> raise (KustoRequestThrottledException("throttled", null :> exn))) }
 
     [<Given>]
     let ``the Kusto client throws a KustoServicePartialQueryFailureLimitsExceededException`` (ctx: Context) =
         { ctx with
             AdxBehavior =
-                Some(fun () ->
-                    raise (KustoServicePartialQueryFailureLimitsExceededException("limits", null :> exn))) }
+                Some(fun () -> raise (KustoServicePartialQueryFailureLimitsExceededException("limits", null :> exn))) }
 
     [<When>]
     let ``the MCP tool execute_kusto_query is called with "(.*)"`` (query: string) (ctx: Context) =
         let mcpClient, ctx = getOrCreateMcpClient ctx
 
-        let args = dict [ "delegateArg0", box query ] |> System.Collections.ObjectModel.ReadOnlyDictionary
+        let args =
+            dict [ "delegateArg0", box query ]
+            |> System.Collections.ObjectModel.ReadOnlyDictionary
 
         let result =
             mcpClient.CallToolAsync("execute_kusto_query", args)
@@ -126,6 +127,7 @@ module Steps =
 
     let private getResultText (ctx: Context) =
         let content = ctx.ToolResult.Value.Content |> Seq.head
+
         match content with
         | :? TextContentBlock as t -> t.Text
         | _ -> failwith "Expected TextContentBlock"
@@ -152,10 +154,9 @@ module Feature =
     open KustoRemoteMcp.Tests
 
     let Scenarios =
-        TickSpecWiring.source.ScenariosFromEmbeddedResource(
-            TickSpecWiring.resourcePrefix + "ExecuteKustoQuery.feature"
-        )
+        TickSpecWiring.source.ScenariosFromEmbeddedResource(TickSpecWiring.resourcePrefix + "ExecuteKustoQuery.feature")
         |> MemberData.ofScenarios
 
     [<Theory; MemberData("Scenarios")>]
-    let Test scenario = TickSpecWiring.source.RunScenario scenario
+    let Test scenario =
+        TickSpecWiring.source.RunScenario scenario

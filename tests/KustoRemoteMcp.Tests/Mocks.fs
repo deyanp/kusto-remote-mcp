@@ -133,7 +133,8 @@ type MockQueryProvider(behavior: unit -> IDataReader) =
 module MockQueryProvider =
     let returning (reader: IDataReader) = new MockQueryProvider(fun () -> reader)
 
-    let throwing (ex: exn) = new MockQueryProvider(fun () -> raise ex)
+    let throwing (ex: exn) =
+        new MockQueryProvider(fun () -> raise ex)
 
 // ---------------------------------------------------------------------------
 // JwtHelper

@@ -15,23 +15,23 @@ let main argv =
     Environment.overwriteEnvironmentVariablesFromKVRef () |> Async.RunSynchronously
 
     // Load config
-    let entra = EntraIdConfig.fromEnv ()
-    let adx = AdxConfig.fromEnv ()
-    let server = ServerConfig.fromEnv ()
+    let entraIdConfig = EntraIdConfig.fromEnv ()
+    let adxConfig = AdxConfig.fromEnv ()
+    let serverConfig = ServerConfig.fromEnv ()
 
     // Wire endpoints and middleware
     let webApis =
         [ Api.Wiring.WebApi.health
-          Api.Wiring.WebApi.OAuth.register (OAuthDI.register entra)
-          Api.Wiring.WebApi.OAuth.authorize (OAuthDI.authorize entra adx)
-          Api.Wiring.WebApi.OAuth.token (OAuthDI.token entra adx)
-          Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (OAuthDI.wellKnownOauthProtectedResource adx server)
-          Api.Wiring.WebApi.OAuth.wellKnownAuthServer (OAuthDI.wellKnownAuthServer entra adx server) ]
+          Api.Wiring.WebApi.OAuth.register (OAuthDI.register entraIdConfig)
+          Api.Wiring.WebApi.OAuth.authorize (OAuthDI.authorize entraIdConfig adxConfig)
+          Api.Wiring.WebApi.OAuth.token (OAuthDI.token entraIdConfig adxConfig)
+          Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (OAuthDI.wellKnownOauthProtectedResource adxConfig serverConfig)
+          Api.Wiring.WebApi.OAuth.wellKnownAuthServer (OAuthDI.wellKnownAuthServer entraIdConfig adxConfig serverConfig) ]
 
-    let mcpTools = Api.Wiring.McpTools.create adx
+    let mcpTools = [ Api.Wiring.McpTools.executeKustoQuery adxConfig ]
 
     let requireBearerToken =
-        DependencyInjection.Middleware.createBearerTokenAuth entra server
+        DependencyInjection.Middleware.createBearerTokenAuth entraIdConfig serverConfig
 
     // Build and run host
     let builder =
@@ -42,7 +42,7 @@ let main argv =
     use tokenSource = new CancellationTokenSource()
     use host = builder.Build()
 
-    printfn "MCP Server running at %s" server.BaseUrl
+    printfn "MCP Server running at %s" serverConfig.BaseUrl
 
     host.RunAsync(tokenSource.Token) |> Async.AwaitTask |> Async.RunSynchronously
 

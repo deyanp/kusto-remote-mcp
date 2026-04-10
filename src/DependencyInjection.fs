@@ -11,7 +11,7 @@ open EnvVars
 let private log = Framework.Logging.createDefault "KustoRemoteMcp.MCP"
 
 module McpTools =
-    let create (adx: AdxConfig) =
+    let executeKustoQuery (adx: AdxConfig) =
         let accessor = HttpContextAccessor() :> IHttpContextAccessor
         let getAuthorizationHeader = Framework.Http.getAuthorizationHeader accessor
 

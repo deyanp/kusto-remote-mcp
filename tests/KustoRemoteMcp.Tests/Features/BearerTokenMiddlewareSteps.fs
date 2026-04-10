@@ -32,11 +32,17 @@ module Steps =
         | None ->
             let webApis =
                 [ Api.Wiring.WebApi.health
-                  Api.Wiring.WebApi.OAuth.wellKnownProtectedResource
-                      (Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray Mocks.log)
-                  Api.Wiring.WebApi.OAuth.wellKnownAuthServer
-                      (Api.Functions.OAuth.wellKnownAuthServer
-                          testEntra.TenantId testEntra.ClientId testServer.BaseUrl testScopeArray Mocks.log) ]
+                  Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (
+                      Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray Mocks.log
+                  )
+                  Api.Wiring.WebApi.OAuth.wellKnownAuthServer (
+                      Api.Functions.OAuth.wellKnownAuthServer
+                          testEntra.TenantId
+                          testEntra.ClientId
+                          testServer.BaseUrl
+                          testScopeArray
+                          Mocks.log
+                  ) ]
 
             let client = TestServer.createWithoutMcp webApis TestServer.requireBearerToken
             client, { ctx with Client = Some client }

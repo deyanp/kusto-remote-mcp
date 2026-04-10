@@ -42,19 +42,31 @@ module Steps =
                 }
 
             let webApis =
-                [ Api.Wiring.WebApi.OAuth.register
-                      (Api.Functions.OAuth.register testEntra.ClientId log)
-                  Api.Wiring.WebApi.OAuth.authorize
-                      (Api.Functions.OAuth.authorize testEntra.TenantId testEntra.ClientId testScopeString log)
-                  Api.Wiring.WebApi.OAuth.token
-                      (Api.Functions.OAuth.token testEntra.ClientId testEntra.ClientSecret testScopeString mockCallOverHttp log)
-                  Api.Wiring.WebApi.OAuth.wellKnownProtectedResource
-                      (Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray log)
-                  Api.Wiring.WebApi.OAuth.wellKnownAuthServer
-                      (Api.Functions.OAuth.wellKnownAuthServer testEntra.TenantId testEntra.ClientId testServer.BaseUrl testScopeArray log) ]
+                [ Api.Wiring.WebApi.OAuth.register (Api.Functions.OAuth.register testEntra.ClientId log)
+                  Api.Wiring.WebApi.OAuth.authorize (
+                      Api.Functions.OAuth.authorize testEntra.TenantId testEntra.ClientId testScopeString log
+                  )
+                  Api.Wiring.WebApi.OAuth.token (
+                      Api.Functions.OAuth.token
+                          testEntra.ClientId
+                          testEntra.ClientSecret
+                          testScopeString
+                          mockCallOverHttp
+                          log
+                  )
+                  Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (
+                      Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray log
+                  )
+                  Api.Wiring.WebApi.OAuth.wellKnownAuthServer (
+                      Api.Functions.OAuth.wellKnownAuthServer
+                          testEntra.TenantId
+                          testEntra.ClientId
+                          testServer.BaseUrl
+                          testScopeArray
+                          log
+                  ) ]
 
-            let client =
-                TestServer.createWithoutMcp webApis TestServer.noMiddleware
+            let client = TestServer.createWithoutMcp webApis TestServer.noMiddleware
 
             client, { ctx with Client = Some client }
 
