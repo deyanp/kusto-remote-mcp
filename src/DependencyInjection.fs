@@ -1,22 +1,21 @@
-/// Dependency composition: partial application of configuration, infrastructure, and logging into MCP tools and OAuth.
+/// Dependency composition: partial application of AppEnv into MCP tools, OAuth handlers, and middleware.
 module KustoRemoteMcp.DependencyInjection
 
-open System.Net.Http
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Kusto.Data
 open Kusto.Data.Net.Client
-open EnvVars
+open AppEnv
 
 let private log = Framework.Logging.createDefault "KustoRemoteMcp.MCP"
 
 module McpTools =
-    let executeKustoQuery (adx: AdxConfig) =
+    let executeKustoQuery (appEnv: AppEnv) =
         let accessor = HttpContextAccessor() :> IHttpContextAccessor
         let getAuthorizationHeader = Framework.Http.getAuthorizationHeader accessor
 
         let createAdxClient (userToken: string) : Kusto.Data.Common.ICslQueryProvider =
-            KustoConnectionStringBuilder(adx.ServiceUrl).WithAadUserTokenAuthentication(userToken)
+            KustoConnectionStringBuilder(appEnv.AdxServiceUrl).WithAadUserTokenAuthentication(userToken)
             |> KustoClientFactory.CreateCslQueryProvider
 
         fun (query: string) ->
@@ -24,41 +23,28 @@ module McpTools =
             |> Async.StartAsTask
 
 module OAuth =
-    let private scopeString (adx: AdxConfig) =
-        sprintf "%s/.default openid profile offline_access" adx.ConnectionString
+    let private callEntraTokenEndpoint (appEnv: AppEnv) =
+        Framework.Http.callOverHttp appEnv.HttpClient appEnv.EntraTokenEndpointUrl
 
-    let private scopeArray (adx: AdxConfig) =
-        [| sprintf "%s/.default" adx.ConnectionString
-           "openid"
-           "profile"
-           "offline_access" |]
+    let register (appEnv: AppEnv) =
+        Api.Functions.OAuth.register appEnv.ClientId log
 
-    let private callEntraTokenEndpoint (entra: EntraIdConfig) =
-        let httpClient = new HttpClient()
+    let authorize (appEnv: AppEnv) =
+        Api.Functions.OAuth.authorize appEnv.TenantId appEnv.ClientId appEnv.ScopeString log
 
-        Framework.Http.callOverHttp
-            httpClient
-            (sprintf "https://login.microsoftonline.com/%s/oauth2/v2.0/token" entra.TenantId)
+    let token (appEnv: AppEnv) =
+        Api.Functions.OAuth.token appEnv.ClientId appEnv.ClientSecret appEnv.ScopeString (callEntraTokenEndpoint appEnv) log
 
-    let register (entra: EntraIdConfig) =
-        Api.Functions.OAuth.register entra.ClientId log
+    let wellKnownOauthProtectedResource (appEnv: AppEnv) =
+        Api.Functions.OAuth.wellKnownOauthProtectedResource appEnv.BaseUrl appEnv.ScopeArray log
 
-    let authorize (entra: EntraIdConfig) (adx: AdxConfig) =
-        Api.Functions.OAuth.authorize entra.TenantId entra.ClientId (scopeString adx) log
-
-    let token (entra: EntraIdConfig) (adx: AdxConfig) =
-        Api.Functions.OAuth.token entra.ClientId entra.ClientSecret (scopeString adx) (callEntraTokenEndpoint entra) log
-
-    let wellKnownOauthProtectedResource (adx: AdxConfig) (server: ServerConfig) =
-        Api.Functions.OAuth.wellKnownOauthProtectedResource server.BaseUrl (scopeArray adx) log
-
-    let wellKnownAuthServer (entra: EntraIdConfig) (adx: AdxConfig) (server: ServerConfig) =
-        Api.Functions.OAuth.wellKnownAuthServer entra.TenantId entra.ClientId server.BaseUrl (scopeArray adx) log
+    let wellKnownAuthServer (appEnv: AppEnv) =
+        Api.Functions.OAuth.wellKnownAuthServer appEnv.TenantId appEnv.ClientId appEnv.BaseUrl appEnv.ScopeArray log
 
 module Middleware =
-    let createBearerTokenAuth (entra: EntraIdConfig) (server: ServerConfig) =
+    let createBearerTokenAuth (appEnv: AppEnv) =
         Framework.AzureEntraIdOAuth.BearerTokenMiddleware.requireBearerToken
-            entra.TenantId
+            appEnv.TenantId
             "MCP Server"
-            (sprintf "%s/.well-known/oauth-protected-resource" server.BaseUrl)
+            (sprintf "%s/.well-known/oauth-protected-resource" appEnv.BaseUrl)
             [ "/mcp" ]

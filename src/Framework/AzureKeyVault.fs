@@ -7,6 +7,9 @@ open System.Text.RegularExpressions
 open Azure.Identity
 open Azure.Security.KeyVault.Secrets
 
+type Async with
+    static member map f a = async { let! r = a in return f r }
+
 module Environment =
     let private kvRegex =
         Regex(
@@ -14,43 +17,33 @@ module Environment =
             RegexOptions.Compiled
         )
 
-    let private tryGetValueFromKV (keyVaultRefOrSecretValue: string) =
+
+    let private resolveValue (value: string) =
         async {
-            if
-                not (String.IsNullOrEmpty(keyVaultRefOrSecretValue))
-                && keyVaultRefOrSecretValue.Contains("Microsoft.KeyVault")
-            then
-                let m = kvRegex.Match(keyVaultRefOrSecretValue)
+            if not (value.StartsWith("!@Microsoft.KeyVault")) then
+                return value
+            else
+                let m = kvRegex.Match value
 
-                if m.Success then
-                    let keyVaultUri = m.Groups.["keyVaultUri"].Value
-                    let secretKey = m.Groups.["secretKey"].Value
-                    let secretVersion = m.Groups.["secretVersion"].Value
-
-                    let client = SecretClient(Uri(keyVaultUri), DefaultAzureCredential())
-
-                    let! response = client.GetSecretAsync(secretKey, secretVersion) |> Async.AwaitTask
-
-                    return response.Value.Value
-                else
+                if not m.Success then
                     return
                         failwithf
                             "Could not parse key vault reference %s with regex %s"
-                            keyVaultRefOrSecretValue
+                            value
                             (kvRegex.ToString())
-            else
-                return keyVaultRefOrSecretValue
+                else
+                    let client = SecretClient(Uri(m.Groups.["keyVaultUri"].Value), DefaultAzureCredential())
+                    let! response = client.GetSecretAsync(m.Groups.["secretKey"].Value, m.Groups.["secretVersion"].Value) |> Async.AwaitTask
+                    return response.Value.Value
         }
 
-    let overwriteEnvironmentVariablesFromKVRef () : Async<unit> =
-        async {
-            let entries =
-                Environment.GetEnvironmentVariables()
-                |> Seq.cast<DictionaryEntry>
-                |> Seq.filter (fun kvp -> (kvp.Value :?> string).StartsWith("!@Microsoft.KeyVault"))
-                |> Seq.toArray
-
-            for kvp in entries do
-                let! decryptedValue = tryGetValueFromKV (kvp.Value :?> string)
-                Environment.SetEnvironmentVariable(kvp.Key :?> string, decryptedValue)
-        }
+    let loadEnvironmentVariables () : Async<Map<string, string>> =
+            Environment.GetEnvironmentVariables()
+            |> Seq.cast<DictionaryEntry>
+            |> Seq.map (fun kvp -> kvp.Key :?> string, kvp.Value :?> string)
+            |> Seq.map (fun (key, value) -> async {
+                let! resolved = resolveValue value
+                return key, resolved
+            })
+            |> Async.Parallel
+            |> Async.map Map.ofArray

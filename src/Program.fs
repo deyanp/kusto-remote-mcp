@@ -1,37 +1,30 @@
-/// Application entry point: Key Vault decryption, host builder composition, and startup.
+/// Application entry point: env var loading, AppEnv construction, host builder composition, and startup.
 module KustoRemoteMcp.Program
 
 open System.Threading
 open Microsoft.Extensions.Hosting
 open Framework.AzureKeyVault.Environment
 open Framework.Hosting.HostBuilder
-open EnvVars
 
-module OAuthDI = DependencyInjection.OAuth
+module DI = DependencyInjection
 
 [<EntryPoint>]
 let main argv =
-    // Decrypt Key Vault references before reading any env vars
-    Environment.overwriteEnvironmentVariablesFromKVRef () |> Async.RunSynchronously
-
-    // Load config
-    let entraIdConfig = EntraIdConfig.fromEnv ()
-    let adxConfig = AdxConfig.fromEnv ()
-    let serverConfig = ServerConfig.fromEnv ()
+    let envVars = Environment.loadEnvironmentVariables () |> Async.RunSynchronously
+    let appEnv = AppEnv.AppEnv.create envVars
 
     // Wire endpoints and middleware
     let webApis =
         [ Api.Wiring.WebApi.health
-          Api.Wiring.WebApi.OAuth.register (OAuthDI.register entraIdConfig)
-          Api.Wiring.WebApi.OAuth.authorize (OAuthDI.authorize entraIdConfig adxConfig)
-          Api.Wiring.WebApi.OAuth.token (OAuthDI.token entraIdConfig adxConfig)
-          Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (OAuthDI.wellKnownOauthProtectedResource adxConfig serverConfig)
-          Api.Wiring.WebApi.OAuth.wellKnownAuthServer (OAuthDI.wellKnownAuthServer entraIdConfig adxConfig serverConfig) ]
+          Api.Wiring.WebApi.OAuth.register (DI.OAuth.register appEnv)
+          Api.Wiring.WebApi.OAuth.authorize (DI.OAuth.authorize appEnv)
+          Api.Wiring.WebApi.OAuth.token (DI.OAuth.token appEnv)
+          Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (DI.OAuth.wellKnownOauthProtectedResource appEnv)
+          Api.Wiring.WebApi.OAuth.wellKnownAuthServer (DI.OAuth.wellKnownAuthServer appEnv) ]
 
-    let mcpTools = [ Api.Wiring.McpTools.executeKustoQuery adxConfig ]
+    let mcpTools = [ Api.Wiring.McpTools.executeKustoQuery (DI.McpTools.executeKustoQuery appEnv) ]
 
-    let requireBearerToken =
-        DependencyInjection.Middleware.createBearerTokenAuth entraIdConfig serverConfig
+    let requireBearerToken = DI.Middleware.createBearerTokenAuth appEnv
 
     // Build and run host
     let builder =
@@ -42,7 +35,7 @@ let main argv =
     use tokenSource = new CancellationTokenSource()
     use host = builder.Build()
 
-    printfn "MCP Server running at %s" serverConfig.BaseUrl
+    printfn "MCP Server running at %s" appEnv.BaseUrl
 
     host.RunAsync(tokenSource.Token) |> Async.AwaitTask |> Async.RunSynchronously
 

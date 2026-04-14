@@ -6,7 +6,7 @@ open global.Xunit
 open KustoRemoteMcp
 open KustoRemoteMcp.Tests
 open KustoRemoteMcp.Tests.Mocks
-open KustoRemoteMcp.Tests.EnvVars
+open KustoRemoteMcp.Tests.AppEnvInit
 
 [<TickSpec.StepScope(Feature = "Bearer Token Middleware")>]
 module Steps =
@@ -33,14 +33,14 @@ module Steps =
             let webApis =
                 [ Api.Wiring.WebApi.health
                   Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (
-                      Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray Mocks.log
+                      Api.Functions.OAuth.wellKnownOauthProtectedResource appEnv.BaseUrl appEnv.ScopeArray Mocks.log
                   )
                   Api.Wiring.WebApi.OAuth.wellKnownAuthServer (
                       Api.Functions.OAuth.wellKnownAuthServer
-                          testEntra.TenantId
-                          testEntra.ClientId
-                          testServer.BaseUrl
-                          testScopeArray
+                          appEnv.TenantId
+                          appEnv.ClientId
+                          appEnv.BaseUrl
+                          appEnv.ScopeArray
                           Mocks.log
                   ) ]
 

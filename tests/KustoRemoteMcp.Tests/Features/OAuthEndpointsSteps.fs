@@ -6,7 +6,7 @@ open TickSpec
 open global.Xunit
 open KustoRemoteMcp
 open KustoRemoteMcp.Tests
-open KustoRemoteMcp.Tests.EnvVars
+open KustoRemoteMcp.Tests.AppEnvInit
 open KustoRemoteMcp.Tests.Mocks
 
 [<TickSpec.StepScope(Feature = "OAuth Proxy Endpoints")>]
@@ -42,27 +42,27 @@ module Steps =
                 }
 
             let webApis =
-                [ Api.Wiring.WebApi.OAuth.register (Api.Functions.OAuth.register testEntra.ClientId log)
+                [ Api.Wiring.WebApi.OAuth.register (Api.Functions.OAuth.register appEnv.ClientId log)
                   Api.Wiring.WebApi.OAuth.authorize (
-                      Api.Functions.OAuth.authorize testEntra.TenantId testEntra.ClientId testScopeString log
+                      Api.Functions.OAuth.authorize appEnv.TenantId appEnv.ClientId appEnv.ScopeString log
                   )
                   Api.Wiring.WebApi.OAuth.token (
                       Api.Functions.OAuth.token
-                          testEntra.ClientId
-                          testEntra.ClientSecret
-                          testScopeString
+                          appEnv.ClientId
+                          appEnv.ClientSecret
+                          appEnv.ScopeString
                           mockCallOverHttp
                           log
                   )
                   Api.Wiring.WebApi.OAuth.wellKnownProtectedResource (
-                      Api.Functions.OAuth.wellKnownOauthProtectedResource testServer.BaseUrl testScopeArray log
+                      Api.Functions.OAuth.wellKnownOauthProtectedResource appEnv.BaseUrl appEnv.ScopeArray log
                   )
                   Api.Wiring.WebApi.OAuth.wellKnownAuthServer (
                       Api.Functions.OAuth.wellKnownAuthServer
-                          testEntra.TenantId
-                          testEntra.ClientId
-                          testServer.BaseUrl
-                          testScopeArray
+                          appEnv.TenantId
+                          appEnv.ClientId
+                          appEnv.BaseUrl
+                          appEnv.ScopeArray
                           log
                   ) ]
 
