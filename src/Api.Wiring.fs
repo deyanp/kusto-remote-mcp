@@ -7,7 +7,6 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Framework.Hosting.HostBuilder
 open Framework.Mcp.Hosting
-open KustoRemoteMcp
 
 module WebApi =
     let health =
@@ -58,12 +57,10 @@ module WebApi =
 
 
 module McpTools =
-    let executeKustoQuery (adx: EnvVars.AdxConfig) =
-        let executeKustoQuery = DependencyInjection.McpTools.executeKustoQuery adx
-
+    let executeKustoQuery (handler: string -> Task<string>) =
         { Name = "execute_kusto_query"
           Description =
             "Executes a KQL query against the configured Azure Data Explorer (Kusto) cluster and database. Returns query results as a JSON array. The query runs under the authenticated user's identity."
           ReadOnly = true
           Destructive = false
-          ExecuteOperation = Func<string, Task<string>>(executeKustoQuery) }
+          ExecuteOperation = Func<string, Task<string>>(handler) }

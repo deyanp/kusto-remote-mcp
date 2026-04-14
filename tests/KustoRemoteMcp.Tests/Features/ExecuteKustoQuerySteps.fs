@@ -11,7 +11,7 @@ open ModelContextProtocol.Client
 open ModelContextProtocol.Protocol
 open KustoRemoteMcp
 open KustoRemoteMcp.Tests
-open KustoRemoteMcp.Tests.EnvVars
+open KustoRemoteMcp.Tests.AppEnvInit
 open KustoRemoteMcp.Tests.Mocks
 
 [<TickSpec.StepScope(Feature = "Execute Kusto Query")>]
@@ -31,7 +31,7 @@ module Steps =
     let private validTestJwt =
         JwtHelper.createToken
             [ "exp", box 9999999999L
-              "iss", box (sprintf "https://login.microsoftonline.com/%s/v2.0" testEntra.TenantId) ]
+              "iss", box (sprintf "https://login.microsoftonline.com/%s/v2.0" appEnv.TenantId) ]
 
     let private getOrCreateMcpClient (ctx: Context) =
         match ctx.McpClient with

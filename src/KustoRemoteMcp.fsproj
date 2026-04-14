@@ -27,7 +27,7 @@
     <Compile Include="Framework/AzureDataExplorer.QueryValidation.fs" />
     <Compile Include="Api.Functions.OAuth.fs" />
     <Compile Include="Api.Functions.McpTools.fs" />
-    <Compile Include="EnvVars.fs" />
+    <Compile Include="AppEnv.fs" />
     <Compile Include="DependencyInjection.fs" />
     <Compile Include="Api.Wiring.fs" />
     <Compile Include="Program.fs" />

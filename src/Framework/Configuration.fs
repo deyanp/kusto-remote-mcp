@@ -16,3 +16,10 @@ module Environment =
     let getEnvironmentVariable (name: string) =
         tryGetEnvironmentVariable name
         |> Option.defaultWith (fun () -> failwith $"Missing environment variable %s{name}!")
+
+    let tryGetFromMap (envVars: Map<string, string>) (name: string) =
+        envVars |> Map.tryFind name |> Option.filter (fun v -> not (String.IsNullOrWhiteSpace v))
+
+    let getFromMap (envVars: Map<string, string>) (name: string) =
+        tryGetFromMap envVars name
+        |> Option.defaultWith (fun () -> failwith $"Missing environment variable %s{name}!")

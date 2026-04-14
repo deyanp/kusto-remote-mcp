@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="EnvVars.fs" />
+    <Compile Include="AppEnvInit.fs" />
     
     <Compile Include="Mocks.fs" />
     <Compile Include="Assert.fs" />

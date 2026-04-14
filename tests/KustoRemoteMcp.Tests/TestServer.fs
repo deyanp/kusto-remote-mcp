@@ -7,13 +7,13 @@ open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.Hosting
 open Framework.Hosting.HostBuilder
 open Framework.Mcp.Hosting
-open KustoRemoteMcp.Tests.EnvVars
+open KustoRemoteMcp.Tests.AppEnvInit
 
 let requireBearerToken (app: IApplicationBuilder) =
     Framework.AzureEntraIdOAuth.BearerTokenMiddleware.requireBearerToken
-        testEntra.TenantId
+        appEnv.TenantId
         "MCP Server"
-        (sprintf "%s/.well-known/oauth-protected-resource" testServer.BaseUrl)
+        (sprintf "%s/.well-known/oauth-protected-resource" appEnv.BaseUrl)
         [ "/mcp" ]
         app
 
